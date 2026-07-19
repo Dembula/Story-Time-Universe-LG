@@ -1,0 +1,20 @@
+{
+  "id": "com.storytime.universe",
+  "version": "1.0.0",
+  "vendor": "Story Time",
+  "type": "web",
+  "main": "index.html",
+  "title": "Story Time Universe",
+  "icon": "icon.png",
+  "largeIcon": "icon-large.png",
+  "bgColor": "#000000",
+  "iconColor": "#FF931F",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "supportPortraitMode": false,
+  "handlesRelaunch": true,
+  "requiredPermissions": [
+    "time.query",
+    "activity.operation"
+  ]
+}

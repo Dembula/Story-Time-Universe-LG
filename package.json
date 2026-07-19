@@ -1,0 +1,36 @@
+{
+  "name": "story-time-universe-lg",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Story Time Universe viewer app for LG webOS TV",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc -b --noEmit",
+    "gen:icons": "node scripts/gen-icons.mjs",
+    "package": "npm run build && ares-package dist -o ./bin",
+    "install-app": "ares-install ./bin/*.ipk",
+    "launch": "ares-launch com.storytime.universe"
+  },
+  "dependencies": {
+    "hls.js": "^1.5.17",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.13.0",
+    "@typescript-eslint/parser": "^8.13.0",
+    "@vitejs/plugin-react": "^4.3.3",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "sharp": "^0.35.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

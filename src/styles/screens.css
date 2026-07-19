@@ -1,0 +1,1046 @@
+/* ===================== Global transitions ===================== */
+.app-fade {
+  animation: fadeIn 0.5s ease both;
+}
+
+.screen-title {
+  font-size: 46px;
+  font-weight: 800;
+  margin: 0 0 30px var(--safe-x);
+}
+
+.empty-note {
+  margin: 40px var(--safe-x);
+  font-size: 24px;
+  color: var(--muted);
+  max-width: 900px;
+}
+
+/* ===================== Splash ===================== */
+.splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  background: radial-gradient(circle at 50% 40%, #1a1206 0%, #000 60%);
+}
+
+.splash-logo {
+  width: 460px;
+  height: auto;
+  filter: drop-shadow(0 18px 60px rgba(255, 147, 31, 0.28));
+}
+
+.splash-spinner {
+  margin-top: 30px;
+}
+
+/* ===================== Sign in ===================== */
+.signin {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.signin-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+}
+
+.glow-a {
+  width: 520px;
+  height: 520px;
+  background: rgba(255, 147, 31, 0.28);
+  top: -120px;
+  left: -80px;
+  animation: pulse 5s ease-in-out infinite alternate;
+}
+
+.glow-b {
+  width: 420px;
+  height: 420px;
+  background: rgba(255, 196, 71, 0.18);
+  bottom: -120px;
+  right: 40px;
+  animation: pulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+.signin-card {
+  position: relative;
+  width: 640px;
+  padding: 56px 56px 44px;
+  background: rgba(12, 12, 12, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--shadow-strong);
+}
+
+.signin-logo-img {
+  width: 260px;
+  height: auto;
+  margin-bottom: 16px;
+}
+
+.profiles-logo {
+  height: 70px;
+  width: auto;
+}
+
+.signin-sub {
+  color: var(--muted);
+  font-size: 20px;
+  margin: 6px 0 28px;
+}
+
+.field {
+  width: 100%;
+  height: 68px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  margin-bottom: 16px;
+}
+
+.field input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: none;
+}
+
+.field.tv-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 147, 31, 0.5);
+}
+
+.signin-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent));
+  color: #000;
+}
+
+.signin-submit.tv-focused {
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.signin-error {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.signin-hint {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.accent {
+  color: var(--accent-gold);
+}
+
+/* ===================== Profiles (full-screen backdrop) ===================== */
+.profiles {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.profiles-backdrop,
+.profiles-backdrop .poster-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profiles-backdrop-fallback {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(255, 147, 31, 0.25), #000);
+}
+
+.profiles-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(0deg, #000 4%, rgba(0, 0, 0, 0.55) 40%, rgba(0, 0, 0, 0.25) 70%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.1));
+}
+
+.profiles-topbar {
+  position: absolute;
+  top: 40px;
+  left: var(--safe-x);
+  right: var(--safe-x);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+}
+
+.ghost-btn {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  border-radius: 30px;
+}
+
+.ghost-btn.tv-focused {
+  background: #fff;
+  color: #000;
+}
+
+.profiles-feature {
+  position: absolute;
+  top: 200px;
+  left: var(--safe-x);
+  z-index: 2;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+}
+
+.profiles-feature-title {
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.profiles-feature-sub {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 6px;
+}
+
+.profiles-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  padding: 40px 0 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.profiles-heading {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+.profiles-grid {
+  display: flex;
+  gap: 40px;
+  padding: 6px 40px;
+}
+
+.profile-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 180px;
+}
+
+.profile-avatar {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 62px;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  border: 3px solid transparent;
+}
+
+.profile-tile.tv-focused .profile-avatar {
+  border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 0 16px 44px rgba(0, 0, 0, 0.6);
+}
+
+.profile-lock {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 20px;
+}
+
+.profile-name {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.profile-age {
+  font-size: 17px;
+  color: var(--muted);
+}
+
+.payment-banner {
+  max-width: 900px;
+  text-align: center;
+  color: var(--accent-gold);
+  font-size: 19px;
+  padding: 14px 22px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(255, 147, 31, 0.35);
+  border-radius: 14px;
+}
+
+/* ===================== Detail ===================== */
+.detail-hero {
+  position: relative;
+  height: 760px;
+}
+
+.detail-hero .hero-bg,
+.detail-hero .hero-bg .poster-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 45%, rgba(0, 0, 0, 0) 75%),
+    linear-gradient(0deg, #000 3%, rgba(0, 0, 0, 0) 55%);
+}
+
+.detail-hero-content {
+  position: absolute;
+  left: var(--safe-x);
+  bottom: 90px;
+  max-width: 960px;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.rating-row .star {
+  color: var(--accent-gold);
+  font-size: 26px;
+}
+
+.rating-count {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.detail-body {
+  padding: 10px var(--safe-x) 80px;
+}
+
+.detail-synopsis {
+  font-size: 24px;
+  line-height: 1.55;
+  color: #d6d6d6;
+  max-width: 1200px;
+  margin-bottom: 40px;
+}
+
+.detail-section {
+  margin-bottom: 48px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.section-head .section-title {
+  margin: 0;
+}
+
+.pill {
+  font-size: 16px;
+  color: var(--muted);
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+}
+
+.detail-section .row-scroller {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.season-title {
+  font-size: 24px;
+  color: var(--accent-gold);
+  margin: 22px 0 14px;
+}
+
+.episode-row {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+}
+
+.episode-row.tv-focused {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.episode-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 220px;
+  height: 124px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.episode-thumb .poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.episode-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.episode-row.tv-focused .episode-play {
+  opacity: 1;
+}
+
+.episode-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.episode-title {
+  font-size: 23px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.episode-desc {
+  font-size: 18px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.episode-dur {
+  font-size: 16px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.cast-card {
+  flex: 0 0 auto;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+}
+
+.cast-card.tv-focused {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.cast-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.cast-name {
+  font-size: 19px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cast-role {
+  font-size: 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.bts-card {
+  flex: 0 0 auto;
+  width: 300px;
+}
+
+.bts-thumb {
+  width: 300px;
+  height: 169px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--card);
+}
+
+.bts-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* ===================== Search / grid ===================== */
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 900px;
+  height: 74px;
+  margin: 0 var(--safe-x) 34px;
+  padding: 0 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+}
+
+.search-field.tv-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 147, 31, 0.5);
+}
+
+.search-ico {
+  font-size: 30px;
+  color: var(--muted);
+}
+
+.search-field input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: none;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 26px;
+  padding: 8px var(--safe-x) 60px;
+}
+
+/* ===================== Account ===================== */
+.account-card {
+  margin: 0 var(--safe-x);
+  max-width: 900px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 14px 30px;
+}
+
+.account-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 22px;
+}
+
+.account-row:last-child {
+  border-bottom: none;
+}
+
+.account-label {
+  color: var(--muted);
+}
+
+.account-value {
+  font-weight: 600;
+}
+
+.account-value.ok {
+  color: #58d68d;
+}
+
+.account-value.warn {
+  color: var(--accent-gold);
+}
+
+.account-note {
+  margin: 22px var(--safe-x);
+  color: var(--muted);
+  font-size: 19px;
+  max-width: 900px;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 10px var(--safe-x) 60px;
+}
+
+/* ===================== Person ===================== */
+.person-head {
+  display: flex;
+  gap: 40px;
+  padding: 10px var(--safe-x) 40px;
+}
+
+.person-avatar {
+  flex: 0 0 auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.person-avatar .poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-meta {
+  flex: 1;
+}
+
+.person-stat {
+  font-size: 20px;
+  color: var(--accent-gold);
+  margin: 12px 0;
+}
+
+/* ===================== Modal / PIN pad ===================== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.pinpad {
+  width: 460px;
+  padding: 40px;
+  background: #101010;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  text-align: center;
+}
+
+.pinpad-title {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 30px;
+}
+
+.pin-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.pin-dot.filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.pin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pin-key {
+  height: 84px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 30px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-key.tv-focused {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent));
+  color: #000;
+}
+
+.pin-key-sub {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ===================== Player ===================== */
+.player {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #000;
+}
+
+.player-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.player-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.player-loading-text {
+  font-size: 22px;
+  color: #ddd;
+}
+
+.player-error-icon {
+  font-size: 64px;
+  color: var(--accent);
+}
+
+/* Controls fade in/out (title + back button) */
+.player-controls {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.player-controls.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.player-scrim-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 220px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+}
+
+.player-scrim-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+}
+
+.player-top {
+  position: absolute;
+  top: 46px;
+  left: 60px;
+  right: 60px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.player-back {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 44px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 6px;
+}
+
+.player-title {
+  flex: 1;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-top-spacer {
+  width: 64px;
+}
+
+.player-bigplay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: #000;
+  font-size: 50px;
+  padding-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-bottom {
+  position: absolute;
+  left: 60px;
+  right: 60px;
+  bottom: 60px;
+}
+
+.player-timerow {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.player-time {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  color: #eee;
+  min-width: 90px;
+  text-align: center;
+}
+
+/* Clean timeline — NO white scrubber knob. Just a gradient fill on a subtle
+   track, with a faint buffered indicator. */
+.seekbar {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.seekbar-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+}
+
+.seekbar-buffered {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 6px;
+}
+
+.seekbar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-gold));
+  border-radius: 6px;
+  transition: width 0.2s linear;
+}
+
+.player-transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 26px;
+}
+
+.transport-hint {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.transport-btn.primary {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #fff;
+  color: #000;
+  font-size: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Seek feedback */
+.seek-feedback {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 30px 44px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.15s ease both;
+}
+
+.seek-feedback.left {
+  left: 140px;
+}
+
+.seek-feedback.right {
+  right: 140px;
+}
+
+.seek-glyph {
+  font-size: 46px;
+  color: var(--accent-gold);
+}
+
+.seek-amount {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Up next */
+.nextup {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.85));
+}
+
+.nextup-card {
+  margin: 0 90px 110px;
+  width: 560px;
+  padding: 34px;
+  border-radius: 22px;
+  background: rgba(16, 16, 16, 0.92);
+  border: 1px solid var(--border);
+}
+
+.nextup-kicker {
+  color: var(--accent-gold);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 17px;
+}
+
+.nextup-label {
+  color: var(--muted);
+  font-size: 19px;
+  margin-top: 10px;
+}
+
+.nextup-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 6px 0 22px;
+}
+
+.nextup-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.spinner.small {
+  width: 26px;
+  height: 26px;
+  border-width: 3px;
+}
