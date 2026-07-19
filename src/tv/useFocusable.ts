@@ -45,7 +45,15 @@ export function useFocusable<T extends HTMLElement = HTMLDivElement>(
       },
     });
 
-    return unregister;
+    // Pointer support: hovering with the Magic Remote / mouse moves the focus
+    // ring to this element so pointer and D-pad stay perfectly in sync.
+    const onPointerEnter = () => focusManager.focusFromPointer(el);
+    el.addEventListener("pointerenter", onPointerEnter);
+
+    return () => {
+      el.removeEventListener("pointerenter", onPointerEnter);
+      unregister();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.disabled, params.focusKey]);
 

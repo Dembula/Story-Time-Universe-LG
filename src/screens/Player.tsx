@@ -266,6 +266,21 @@ export function Player({ request, onClose }: PlayerProps) {
     [showControls],
   );
 
+  // Pointer scrubbing: click anywhere on the seek bar to jump there.
+  const scrubTo = useCallback(
+    (clientX: number, track: HTMLElement) => {
+      const v = videoRef.current;
+      if (!v || !isFinite(v.duration) || v.duration <= 0) return;
+      const rect = track.getBoundingClientRect();
+      const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const target = frac * v.duration;
+      v.currentTime = target;
+      setCurrent(target);
+      showControls();
+    },
+    [showControls],
+  );
+
   const exit = useCallback(() => {
     saveProgress(true);
     onClose();
@@ -327,8 +342,14 @@ export function Player({ request, onClose }: PlayerProps) {
   const titleText = request.isTrailer ? `Trailer · ${request.title}` : request.title;
 
   return (
-    <div className="player">
-      <video ref={videoRef} className="player-video" playsInline />
+    <div className="player" onMouseMove={() => showControls()}>
+      <video
+        ref={videoRef}
+        className="player-video"
+        playsInline
+        onClick={togglePlay}
+        style={{ cursor: "pointer" }}
+      />
 
       {loading && !error && (
         <div className="player-center">
@@ -377,7 +398,17 @@ export function Player({ request, onClose }: PlayerProps) {
           <div className="player-bottom">
             <div className="player-timerow">
               <span className="player-time">{formatTime(current)}</span>
-              <div className="seekbar">
+              <div
+                className="seekbar"
+                role="slider"
+                aria-label="Seek"
+                aria-valuemin={0}
+                aria-valuemax={Math.round(duration)}
+                aria-valuenow={Math.round(current)}
+                tabIndex={-1}
+                style={{ cursor: "pointer" }}
+                onClick={(e) => scrubTo(e.clientX, e.currentTarget)}
+              >
                 <div className="seekbar-track" />
                 <div className="seekbar-buffered" style={{ width: `${bufferedPct}%` }} />
                 <div className="seekbar-fill" style={{ width: `${progressPct}%` }} />

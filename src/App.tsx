@@ -4,7 +4,7 @@ import { Splash } from "@/screens/Splash";
 import { SignIn } from "@/screens/SignIn";
 import { Profiles } from "@/screens/Profiles";
 import { MainApp } from "@/screens/MainApp";
-import { hideMagicRemotePointer } from "@/tv/platform";
+import { setupRemoteInput } from "@/tv/platform";
 
 function Router() {
   const { route } = useAppState();
@@ -23,8 +23,8 @@ function Router() {
 
 export default function App() {
   useEffect(() => {
-    // Turn the Magic Remote pointer off for a pure D-pad experience.
-    hideMagicRemotePointer();
+    // Support both D-pad and pointer-equipped remotes on every LG TV.
+    setupRemoteInput();
   }, []);
 
   return (

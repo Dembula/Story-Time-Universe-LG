@@ -2,10 +2,13 @@
  * webOS platform integration.
  *
  * Handles the TV-specific concerns the user asked for:
- *  - hiding the Magic Remote pointer/cursor so the UI is pure D-pad driven,
+ *  - supporting BOTH input styles (plain D-pad remotes AND pointer-equipped
+ *    Magic Remotes / mice) so the app is modern and works on every LG TV,
  *  - deep-linking payments/account out to the TV browser,
  *  - exiting cleanly on the root BACK press.
  */
+
+import { focusManager } from "./focusManager";
 
 interface WebOSSystem {
   platformBack?: () => void;
@@ -34,36 +37,55 @@ declare global {
 export const isWebOS = (): boolean =>
   typeof window !== "undefined" && (!!window.webOS || !!window.PalmSystem || /web0s|webos/i.test(navigator.userAgent));
 
-let cursorHidden = false;
+let inputInited = false;
 
 /**
- * Hide the Magic Remote pointer. webOS surfaces a "cursorStateChange" event and
- * respects `cursor: none`; we force it globally and re-hide whenever the pointer
- * tries to reappear, so remotes that carry a pointer behave like a plain D-pad.
+ * Wire up dual-input support so the app feels native with either a plain D-pad
+ * remote or a pointer-equipped Magic Remote / mouse.
+ *
+ * We track the current input mode and expose it two ways:
+ *  - `body.dpad-mode` (CSS hides the arrow cursor while navigating by D-pad),
+ *  - `focusManager.setPointerActive(...)` (so hover only moves focus while the
+ *    pointer is genuinely in use, never during D-pad scrolling).
+ *
+ * webOS raises `cursorStateChange` whenever its pointer appears/disappears; we
+ * also treat real mouse/pointer movement as "pointer" and any navigation key as
+ * "D-pad", which keeps desktop dev and older sets behaving correctly too.
  */
-export function hideMagicRemotePointer(): void {
-  if (cursorHidden) return;
-  cursorHidden = true;
+export function setupRemoteInput(): void {
+  if (inputInited) return;
+  inputInited = true;
 
-  const apply = () => {
-    document.body.style.cursor = "none";
-    document.documentElement.style.cursor = "none";
+  const setMode = (pointer: boolean) => {
+    if (focusManager.isPointerActive() === pointer) return;
+    focusManager.setPointerActive(pointer);
+    document.body.classList.toggle("dpad-mode", !pointer);
+    document.body.classList.toggle("pointer-mode", pointer);
   };
-  apply();
+
+  // Start in D-pad mode; the first pointer movement flips it.
+  setMode(false);
 
   document.addEventListener(
     "cursorStateChange",
     (event) => {
       const visible = (event as CustomEvent<{ visibility?: boolean }>).detail?.visibility;
-      document.body.classList.toggle("cursor-visible", !!visible);
-      if (!visible) apply();
+      setMode(!!visible);
     },
     true,
   );
 
-  // Any real pointer movement immediately re-hides the cursor and drops the
-  // hover state so nothing looks "pointer-selected".
-  window.addEventListener("mousemove", apply, true);
+  const toPointer = () => setMode(true);
+  window.addEventListener("mousemove", toPointer, true);
+  window.addEventListener("pointermove", toPointer, true);
+  window.addEventListener("mousedown", toPointer, true);
+
+  // Any directional / OK / colour key press means the viewer is on the D-pad.
+  window.addEventListener(
+    "keydown",
+    () => setMode(false),
+    true,
+  );
 }
 
 /**

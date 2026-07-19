@@ -59,6 +59,7 @@ class FocusManager {
   private entries = new Map<HTMLElement, Entry>();
   private current: HTMLElement | null = null;
   private paused = false;
+  private pointerActive = false;
 
   register(el: HTMLElement, opts: FocusableOptions): () => void {
     const entry: Entry = { el, opts };
@@ -89,6 +90,25 @@ class FocusManager {
 
   isPaused(): boolean {
     return this.paused;
+  }
+
+  /** True while a pointer (Magic Remote / mouse) is the active input device. */
+  setPointerActive(active: boolean): void {
+    this.pointerActive = active;
+  }
+
+  isPointerActive(): boolean {
+    return this.pointerActive;
+  }
+
+  /**
+   * Move focus to an element because the pointer hovered it. Ignored unless the
+   * pointer is the active device, so D-pad navigation is never hijacked by a
+   * stray hover during smooth-scrolling.
+   */
+  focusFromPointer(el: HTMLElement): void {
+    if (!this.pointerActive || this.paused) return;
+    this.focus(el);
   }
 
   getCurrent(): HTMLElement | null {
