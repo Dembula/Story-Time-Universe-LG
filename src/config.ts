@@ -7,7 +7,13 @@
  */
 export const AppConfig = {
   webBaseURL: "https://story-time.online",
+  /**
+   * In Vite dev, use same-origin relative URLs so `/api/*` goes through the
+   * proxy in `vite.config.ts` (avoids CORS + keeps auth cookies on localhost).
+   * On the TV / production build, hit the live backend directly.
+   */
   get apiBaseURL(): string {
+    if (import.meta.env.DEV) return "";
     return this.webBaseURL;
   },
 
@@ -24,7 +30,22 @@ export const AppConfig = {
 
 export function apiUrl(path: string, query?: Record<string, string | number | boolean | undefined | null>): string {
   const cleaned = path.replace(/^\/+/, "");
-  const url = new URL(`${AppConfig.apiBaseURL}/${cleaned}`);
+  const base = AppConfig.apiBaseURL;
+
+  // Relative same-origin path for the Vite dev proxy.
+  if (!base) {
+    const params = new URLSearchParams();
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value === undefined || value === null || value === "") continue;
+        params.set(key, String(value));
+      }
+    }
+    const qs = params.toString();
+    return `/${cleaned}${qs ? `?${qs}` : ""}`;
+  }
+
+  const url = new URL(`${base}/${cleaned}`);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null || value === "") continue;

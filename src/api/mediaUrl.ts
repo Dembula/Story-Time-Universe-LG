@@ -1,4 +1,4 @@
-import { AppConfig } from "@/config";
+import { AppConfig, apiUrl } from "@/config";
 
 /**
  * Ordered image-URL resolution — ported from the iOS `MediaURL` helper so the
@@ -54,10 +54,7 @@ function previewProxyUrl(raw?: string | null): string | null {
       !t.toLowerCase().startsWith("https://") &&
       !t.startsWith("/"));
   if (!looksPrivate) return null;
-  const url = new URL(`${AppConfig.apiBaseURL}/api/files/preview`);
-  url.searchParams.set("ref", t);
-  url.searchParams.set("context", "marketplace");
-  return url.toString();
+  return apiUrl("api/files/preview", { ref: t, context: "marketplace" });
 }
 
 function extractStreamUid(videoUrl?: string | null): string | null {
