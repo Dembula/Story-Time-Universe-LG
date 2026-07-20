@@ -1,6 +1,7 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 
 // Some webOS TV runtimes fail to load package-local ESM assets that carry the
 // `crossorigin` attribute. Strip it from the generated <script>/<link> tags.
@@ -13,12 +14,30 @@ function stripCrossorigin(): Plugin {
   };
 }
 
+/**
+ * NextAuth sends `__Host-` / `__Secure-` session cookies. Browsers only store
+ * those on HTTPS, and `__Host-` cookies must not carry a Domain attribute.
+ * Rewrite proxied Set-Cookie headers so they work on https://localhost.
+ */
+function rewriteAuthCookies(cookies: string[]): string[] {
+  return cookies.map((cookie) => {
+    let out = cookie;
+    // Drop Domain so the cookie is host-only for localhost (__Host- requires this).
+    out = out.replace(/;\s*Domain=[^;]*/gi, "");
+    // Keep Secure (required by __Host- / __Secure-); add it if the backend omitted it.
+    if (!/;\s*Secure\b/i.test(out)) out += "; Secure";
+    // SameSite=None is fine over HTTPS; leave as-is. If missing, prefer Lax.
+    if (!/;\s*SameSite=/i.test(out)) out += "; SameSite=Lax";
+    return out;
+  });
+}
+
 // webOS packages load assets from a relative path inside the .ipk, so `base`
 // must be relative. We also down-level the JS output so it runs on the older
 // Chromium builds shipped on webOS 4.x / 5.x TVs.
 export default defineConfig({
   base: "./",
-  plugins: [react(), stripCrossorigin()],
+  plugins: [react(), basicSsl(), stripCrossorigin()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -40,25 +59,19 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    // Same-origin proxy so browser requests from localhost:5173 avoid CORS
-    // and can receive NextAuth session cookies during local development.
+    // HTTPS via @vitejs/plugin-basic-ssl so browsers accept __Host- / __Secure-
+    // NextAuth cookies on https://localhost:5173.
+    // Same-origin proxy avoids CORS and forwards session cookies in local dev.
     proxy: {
       "/api": {
         target: "https://story-time.online",
         changeOrigin: true,
         secure: true,
-        cookieDomainRewrite: "localhost",
         configure: (proxy) => {
           proxy.on("proxyRes", (proxyRes) => {
             const cookies = proxyRes.headers["set-cookie"];
             if (!cookies) return;
-            // Drop Secure so cookies stick on http://localhost, and relax
-            // SameSite=None (which requires Secure) to Lax for local auth.
-            proxyRes.headers["set-cookie"] = cookies.map((c) =>
-              c
-                .replace(/;\s*Secure/gi, "")
-                .replace(/;\s*SameSite=None/gi, "; SameSite=Lax"),
-            );
+            proxyRes.headers["set-cookie"] = rewriteAuthCookies(cookies);
           });
         },
       },

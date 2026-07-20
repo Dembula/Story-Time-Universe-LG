@@ -74,13 +74,13 @@ public/
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173 (test in a Chromium browser)
+npm run dev        # https://localhost:5173 (accept the self-signed cert once)
 ```
 
-Because the browser enforces same-origin, live API calls during `npm run dev`
-work best when the backend allows credentialed CORS for the dev origin. On the TV
-itself the packaged app makes credentialed requests to `story-time.online` like
-the mobile clients do.
+Local API traffic is proxied through Vite to `https://story-time.online`, and the
+dev server runs over HTTPS so browsers will store NextAuth `__Host-` /
+`__Secure-` session cookies. On the TV itself the packaged app talks to
+`story-time.online` directly, like the mobile clients.
 
 ## Build & package for webOS
 
