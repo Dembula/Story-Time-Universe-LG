@@ -82,8 +82,16 @@ export const SECONDARY_HOME_ROWS: RowDefinition[] = [
 
 export const ALL_HOME_ROWS = [...PRIMARY_HOME_ROWS, ...SECONDARY_HOME_ROWS];
 
+// Avoid Array.flatMap — missing on Chromium 68 (webOS 5.0) and causes a
+// black-screen boot crash before React mounts.
+const ALL_HOME_TYPE_VALUES: string[] = [];
+for (let i = 0; i < ALL_HOME_ROWS.length; i++) {
+  const vals = ALL_HOME_ROWS[i].typeValues;
+  for (let j = 0; j < vals.length; j++) ALL_HOME_TYPE_VALUES.push(vals[j]);
+}
+
 export const ALL_TRACKED_TYPE_VALUES = new Set<string>([
-  ...ALL_HOME_ROWS.flatMap((r) => r.typeValues),
+  ...ALL_HOME_TYPE_VALUES,
   ...ALL_CATALOGUE_TYPE_VALUES,
 ]);
 

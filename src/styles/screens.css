@@ -19,7 +19,7 @@
 /* ===================== Splash ===================== */
 .splash {
   position: fixed;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -41,7 +41,7 @@
 /* ===================== Sign in ===================== */
 .signin {
   position: fixed;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -170,14 +170,14 @@
 /* ===================== Profiles (full-screen backdrop) ===================== */
 .profiles {
   position: fixed;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   overflow: hidden;
 }
 
 .profiles-backdrop,
 .profiles-backdrop .poster-img {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -185,13 +185,13 @@
 
 .profiles-backdrop-fallback {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   background: linear-gradient(160deg, rgba(255, 147, 31, 0.25), #000);
 }
 
 .profiles-scrim {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   background:
     linear-gradient(0deg, #000 4%, rgba(0, 0, 0, 0.55) 40%, rgba(0, 0, 0, 0.25) 70%),
     linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.1));
@@ -329,7 +329,7 @@
 .detail-hero .hero-bg,
 .detail-hero .hero-bg .poster-img {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -337,7 +337,7 @@
 
 .detail-hero-scrim {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   background:
     linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 45%, rgba(0, 0, 0, 0) 75%),
     linear-gradient(0deg, #000 3%, rgba(0, 0, 0, 0) 55%);
@@ -451,7 +451,7 @@
 
 .episode-play {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -685,7 +685,7 @@
 /* ===================== Modal / PIN pad ===================== */
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   z-index: 60;
   display: flex;
   align-items: center;
@@ -758,7 +758,7 @@
 /* ===================== Player ===================== */
 .player {
   position: fixed;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   z-index: 80;
   background: #000;
 }
@@ -772,7 +772,7 @@
 
 .player-center {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -793,7 +793,7 @@
 /* Controls fade in/out (title + back button) */
 .player-controls {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.35s ease;
@@ -912,7 +912,7 @@
 
 .seekbar-track {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   background: rgba(255, 255, 255, 0.22);
   border-radius: 6px;
 }
@@ -998,7 +998,7 @@
 /* Up next */
 .nextup {
   position: absolute;
-  inset: 0;
+  top: 0;  right: 0;  bottom: 0;  left: 0;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;

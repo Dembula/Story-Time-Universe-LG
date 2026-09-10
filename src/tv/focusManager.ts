@@ -49,7 +49,10 @@ function rectOf(el: HTMLElement): Rect {
 }
 
 function isVisible(el: HTMLElement): boolean {
-  if (!el.isConnected) return false;
+  // `isConnected` is Chrome 51+ — on webOS 3 (Chrome 38) it's undefined;
+  // treat only an explicit `false` as detached so focus still works.
+  if (el.isConnected === false) return false;
+  if (!el.parentNode) return false;
   if (el.offsetParent === null && getComputedStyle(el).position !== "fixed") return false;
   const r = el.getBoundingClientRect();
   return r.width > 0 && r.height > 0;
@@ -232,24 +235,42 @@ class FocusManager {
   /** Smoothly bring the focused element into a comfortable viewing band. */
   private ensureVisible(el: HTMLElement): void {
     // Horizontal: center inside the nearest row scroller.
-    const row = el.closest<HTMLElement>('[data-scroll="row"]');
+    const row = el.closest("[data-scroll=\"row\"]") as HTMLElement | null;
     if (row) {
       const elRect = el.getBoundingClientRect();
       const rowRect = row.getBoundingClientRect();
       const target =
         row.scrollLeft + (elRect.left - rowRect.left) - rowRect.width / 2 + elRect.width / 2;
-      row.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+      const left = Math.max(0, target);
+      if (typeof row.scrollTo === "function") {
+        try {
+          row.scrollTo({ left, behavior: "smooth" });
+        } catch {
+          row.scrollLeft = left;
+        }
+      } else {
+        row.scrollLeft = left;
+      }
     }
 
     // Vertical: keep the focused element around 38% down the page scroller.
-    const page = el.closest<HTMLElement>('[data-scroll="page"]');
+    const page = el.closest("[data-scroll=\"page\"]") as HTMLElement | null;
     if (page) {
       const elRect = el.getBoundingClientRect();
       const pageRect = page.getBoundingClientRect();
       const desired = pageRect.height * 0.38;
       const delta = elRect.top - pageRect.top - desired;
       if (Math.abs(delta) > 4) {
-        page.scrollTo({ top: Math.max(0, page.scrollTop + delta), behavior: "smooth" });
+        const top = Math.max(0, page.scrollTop + delta);
+        if (typeof page.scrollTo === "function") {
+          try {
+            page.scrollTo({ top, behavior: "smooth" });
+          } catch {
+            page.scrollTop = top;
+          }
+        } else {
+          page.scrollTop = top;
+        }
       }
     }
   }

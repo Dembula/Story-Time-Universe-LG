@@ -35,6 +35,8 @@ export interface ActiveProfileResponse {
   error?: string;
   requiresPin?: boolean;
   paymentRequired?: boolean;
+  /** Returned for Bearer/TV clients — send as X-ST-Viewer-Profile on later calls. */
+  viewerProfileId?: string;
 }
 
 export interface ContentItem {

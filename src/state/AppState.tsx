@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { AuthAPI } from "@/api/auth";
+import { apiClient } from "@/api/client";
 import { ViewerAPI } from "@/api/viewerApi";
 import type { AuthSession, ViewerProfile, ViewerSubscription } from "@/api/types";
 import { onRelaunch } from "@/tv/platform";
@@ -90,6 +91,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return onRelaunch(() => {
       if (routeRef.current === "loading" || routeRef.current === "signIn") return;
       if (sessionRef.current?.user) {
+        apiClient.setViewerProfileId(null);
         setActiveProfile(null);
         setRoute("profiles");
       }
@@ -123,11 +125,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const selectProfile = useCallback((profile: ViewerProfile) => {
+    apiClient.setViewerProfileId(profile.id);
     setActiveProfile(profile);
     setRoute("main");
   }, []);
 
   const switchProfile = useCallback(() => {
+    apiClient.setViewerProfileId(null);
     setActiveProfile(null);
     setRoute("profiles");
   }, []);

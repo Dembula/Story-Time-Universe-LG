@@ -35,9 +35,12 @@ the platform's native application language.
 
 ## Viewer flow
 
-1. **Sign in** with a viewer account (`credentials-viewer` via NextAuth).
+1. **Sign in** with a viewer account. Packaged TVs use **`POST /api/tv/session`**
+   (Bearer JWT) — cookie NextAuth alone cannot create a session from a webOS
+   app origin. Desktop `npm run dev` can still fall back to cookies via the proxy.
 2. Every launch lands on **Choose your profile** (never auto-restores a profile).
-3. Select a profile (4-digit PIN supported via an on-screen pad).
+3. Select a profile (4-digit PIN supported via an on-screen pad). Profile id is
+   sent as `X-ST-Viewer-Profile` / `X-Viewer-Profile-Id` on later API calls.
 4. **Home / Search / My List / Account** in a focusable left rail.
 5. **Play** streams the HLS `playback-bundle`; **Trailer**, **credits/cast**,
    **episodes**, **more like this** and **behind the scenes** all supported.
@@ -47,7 +50,7 @@ the platform's native application language.
 
 | Area        | Endpoints |
 | ----------- | --------- |
-| Auth        | `GET /api/auth/csrf`, `POST /api/auth/callback/credentials-viewer`, `GET /api/auth/session`, `POST /api/auth/signout` |
+| Auth        | `POST/GET/DELETE /api/tv/session` (primary on TV), cookie NextAuth fallback (`csrf` / `credentials-viewer` / `session` / `signout`) |
 | Profiles    | `GET/POST /api/viewer/profiles`, `POST /api/viewer/profiles/active` |
 | Catalogue   | `GET /api/content`, `GET /api/content/:id`, `GET /api/browse/search` |
 | Playback    | `GET /api/content/:id/playback-bundle` (films + trailers), `GET/PUT /api/watch/progress`, `POST /api/watch`, `GET /api/watch/continue-watching` |
@@ -103,10 +106,15 @@ player, Left/Right skip 10s.
 
 ## Notes
 
-- Written for webOS 4.x+ (JS is transpiled to ES2018 for older TV Chromium).
+- Packaged for **webOS 3.0 → 26** via `@vitejs/plugin-legacy` (`chrome >= 38`),
+  emitting a classic SystemJS entry (no `type="module"`) so older Chromium does
+  not black-screen on launch (TVAPPQA-61911).
+- Auth on device uses **`/api/tv/session` Bearer JWT** so sessions stick without
+  NextAuth cookies (TVAPPQA-61908). Same approach as the Samsung TV app.
 - Dual input: D-pad and pointer are both supported (`setupRemoteInput` in
   `src/tv/platform.ts`). The current mode is tracked via `cursorStateChange`,
   pointer movement, and key presses; `body.dpad-mode` hides the arrow while
   navigating with the D-pad so it never lingers on screen.
 - App icons are generated from the official black **S.T** brand icon via
   `npm run gen:icons`.
+- App version **1.0.1** in `public/appinfo.json`.

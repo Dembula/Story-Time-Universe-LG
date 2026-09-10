@@ -37,12 +37,61 @@ export interface RawResponse {
   text: string;
 }
 
+const TOKEN_KEY = "stu_session_token";
+const PROFILE_KEY = "stu_viewer_profile";
+
+function readStorage(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key: string, value: string | null): void {
+  try {
+    if (value) window.localStorage.setItem(key, value);
+    else window.localStorage.removeItem(key);
+  } catch {
+    /* private mode / webOS quota */
+  }
+}
+
 /**
- * Thin fetch wrapper mirroring the iOS `APIClient`. All requests include
- * credentials so the NextAuth session + viewer-profile cookies set by the web
- * backend are attached on the TV, exactly like the mobile clients.
+ * HTTP client for the packaged webOS app.
+ *
+ * Packaged LG apps run from a non–story-time.online origin. Chromium will not
+ * keep NextAuth SameSite=Lax / __Host- cookies on cross-origin fetch, so the
+ * primary auth path is a JWT from POST /api/tv/session (same as Samsung).
+ * Cookie credentials remain a desktop/dev fallback only.
  */
 class ApiClient {
+  private accessToken: string | null = readStorage(TOKEN_KEY);
+  private viewerProfileId: string | null = readStorage(PROFILE_KEY);
+
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  setAccessToken(token: string | null): void {
+    this.accessToken = token;
+    writeStorage(TOKEN_KEY, token);
+  }
+
+  clearAccessToken(): void {
+    this.setAccessToken(null);
+    this.setViewerProfileId(null);
+  }
+
+  getViewerProfileId(): string | null {
+    return this.viewerProfileId;
+  }
+
+  setViewerProfileId(id: string | null): void {
+    this.viewerProfileId = id;
+    writeStorage(PROFILE_KEY, id);
+  }
+
   async request(path: string, options: RequestOptions = {}): Promise<RawResponse> {
     const {
       method = "GET",
@@ -55,9 +104,17 @@ class ApiClient {
 
     const url = apiUrl(path, query);
     const headers: Record<string, string> = {
-      "User-Agent": "StoryTimeUniverseWebOS/1.0",
+      "X-ST-Platform": "webos",
+      "X-ST-Device": "lg-tv",
     };
     if (acceptsJSON) headers["Accept"] = "application/json";
+    if (this.accessToken) headers["Authorization"] = `Bearer ${this.accessToken}`;
+    // Live TV CORS allowlist uses X-ST-Viewer-Profile; some backend helpers also
+    // read X-Viewer-Profile-Id — send both so profile-scoped APIs work either way.
+    if (this.viewerProfileId) {
+      headers["X-ST-Viewer-Profile"] = this.viewerProfileId;
+      headers["X-Viewer-Profile-Id"] = this.viewerProfileId;
+    }
 
     let body: BodyInit | undefined;
     if (jsonBody !== undefined) {
@@ -65,12 +122,11 @@ class ApiClient {
       body = JSON.stringify(jsonBody);
     } else if (formBody) {
       headers["Content-Type"] = "application/x-www-form-urlencoded";
-      body = Object.entries(formBody)
-        .map(
-          ([k, v]) =>
-            `${encodeURIComponent(k)}=${encodeURIComponent(v)}`,
-        )
-        .join("&");
+      const parts: string[] = [];
+      for (const key of Object.keys(formBody)) {
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(formBody[key])}`);
+      }
+      body = parts.join("&");
     }
 
     let response: Response;
@@ -79,7 +135,10 @@ class ApiClient {
         method,
         headers,
         body,
-        credentials: "include",
+        // Bearer sessions must omit cookies so CORS does not demand credentials.
+        credentials: this.accessToken ? "omit" : "include",
+        mode: "cors",
+        cache: "no-store",
         signal,
       });
     } catch (err) {

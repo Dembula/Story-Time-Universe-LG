@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
 import { ViewerAPI } from "@/api/viewerApi";
+import { apiClient } from "@/api/client";
 import { resolveStreamUrl } from "@/api/mediaUrl";
 import type { EpisodePlaybackInfo } from "@/api/types";
 import type { PlaybackRequest } from "@/state/Navigation";
@@ -120,11 +121,15 @@ export function Player({ request, onClose }: PlayerProps) {
         if (isHls && !video.canPlayType("application/vnd.apple.mpegurl")) {
           const HlsMod = (await import("hls.js")).default;
           if (HlsMod.isSupported()) {
+            const useCredentials = !apiClient.getAccessToken();
             const hls = new HlsMod({
-              enableWorker: true,
+              // Workers are unreliable on older webOS Chromium.
+              enableWorker: false,
               lowLatencyMode: false,
               xhrSetup: (xhr) => {
-                xhr.withCredentials = true;
+                // Cookie sessions need credentials; Bearer/JWT must omit them
+                // or HLS CDN CORS rejects the request.
+                xhr.withCredentials = useCredentials;
               },
             });
             hlsRef.current = hls;
@@ -140,7 +145,11 @@ export function Player({ request, onClose }: PlayerProps) {
 
         // Native HLS (webOS/Safari) or progressive MP4.
         video.src = src;
-        video.addEventListener("loadedmetadata", startPlayback, { once: true });
+        const onMeta = () => {
+          video.removeEventListener("loadedmetadata", onMeta);
+          startPlayback();
+        };
+        video.addEventListener("loadedmetadata", onMeta);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not start playback.");
         setLoading(false);
@@ -454,6 +463,7 @@ function formatTime(seconds: number): string {
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
+  const pad = (n: number) => (n < 10 ? `0${n}` : String(n));
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
+  return `${m}:${pad(s)}`;
 }

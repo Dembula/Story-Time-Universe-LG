@@ -47,6 +47,7 @@ export const ViewerAPI = {
     }
     if (!res.ok) throw apiClient.parseError(res.data, res.status);
     if (!data.profile) throw new ApiError("server", data.error ?? "Failed to select profile");
+    apiClient.setViewerProfileId(data.viewerProfileId ?? data.profile.id);
     return data.profile;
   },
 
