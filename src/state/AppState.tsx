@@ -24,7 +24,7 @@ interface AppStateValue {
   bootstrapError: string | null;
   isBusy: boolean;
   needsPaymentAttention: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, mfaCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
   selectProfile: (profile: ViewerProfile) => void;
   switchProfile: () => void;
@@ -98,10 +98,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, mfaCode?: string) => {
     setIsBusy(true);
     try {
-      const s = await AuthAPI.signIn(email, password);
+      const s = await AuthAPI.signIn(email, password, mfaCode);
+      apiClient.setViewerProfileId(null);
       setSession(s);
       setActiveProfile(null);
       setSubscription(await ViewerAPI.fetchSubscription().catch(() => null));

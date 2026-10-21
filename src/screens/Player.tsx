@@ -358,6 +358,9 @@ export function Player({ request, onClose }: PlayerProps) {
         playsInline
         onClick={togglePlay}
         style={{ cursor: "pointer" }}
+        // Cookie sessions need credentialed media; Bearer/JWT must omit
+        // crossorigin or HLS CDN CORS blocks playback on webOS.
+        crossOrigin={apiClient.getAccessToken() ? undefined : "use-credentials"}
       />
 
       {loading && !error && (

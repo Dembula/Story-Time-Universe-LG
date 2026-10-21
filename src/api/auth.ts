@@ -8,36 +8,64 @@ interface CSRFResponse {
 
 interface TvSessionPayload {
   token?: string;
+  accessToken?: string;
   session?: AuthSession | SessionUser | null;
   user?: SessionUser | null;
   error?: string;
+  mfaRequired?: boolean;
+  expiresIn?: number;
+}
+
+function extractToken(data: TvSessionPayload | null | undefined): string | null {
+  if (!data) return null;
+  const raw = data.token || data.accessToken;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 10 ? trimmed : null;
 }
 
 function sessionFromPayload(raw: unknown): AuthSession | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as TvSessionPayload;
-  const user = (data.session && "user" in data.session ? data.session.user : null)
-    ?? (data.session as SessionUser | undefined)
-    ?? data.user
-    ?? null;
-  if (!user || (!user.email && !user.id)) return null;
-  if (data.session && "user" in data.session && data.session.user) {
-    return data.session as AuthSession;
+
+  // Preferred: { session: { user } }
+  if (data.session && typeof data.session === "object") {
+    const nested = data.session as AuthSession & SessionUser;
+    if (nested.user && (nested.user.email || nested.user.id)) {
+      return { user: nested.user, expires: (nested as AuthSession).expires };
+    }
+    if (nested.email || nested.id) {
+      return { user: nested as SessionUser };
+    }
   }
-  return { user };
+
+  // Flat: { user }
+  if (data.user && (data.user.email || data.user.id)) {
+    return { user: data.user };
+  }
+
+  return null;
 }
 
 /**
  * Auth for packaged webOS TVs.
  *
- * Cookie NextAuth fails on LG (and Samsung) packaged origins — Chromium will
- * not store SameSite=Lax / __Host- cookies from cross-origin fetch, which is
- * exactly QA TVAPPQA-61908 ("Sign-in succeeded but no session was created").
+ * Cookie NextAuth CANNOT create a usable session from a packaged webOS origin
+ * (SameSite=Lax / __Host- cookies are dropped). That produced QA failure
+ * TVAPPQA-61908: "Sign-in succeeded but no session was created".
  *
- * Primary: POST /api/tv/session → JWT stored in localStorage.
- * Fallback: cookie NextAuth (desktop / Vite HTTPS proxy preview only).
+ * Production path (always on TV / release builds):
+ *   POST /api/tv/session → JWT → Authorization: Bearer on every API call
+ *   Middleware injects Bearer + X-ST-Viewer-Profile onto cookies server-side.
+ *
+ * Cookie NextAuth is DEV-only (Vite HTTPS proxy), never used on the packaged IPK.
  */
 export const AuthAPI = {
+  /** Packaged TV / production builds must never rely on browser cookies. */
+  usesCookieFallback(): boolean {
+    return !!import.meta.env.DEV;
+  },
+
   async fetchSession(): Promise<AuthSession | null> {
     const token = apiClient.getAccessToken();
     if (token) {
@@ -47,19 +75,22 @@ export const AuthAPI = {
           apiClient.clearAccessToken();
           return null;
         }
+        if (res.status === 200) {
+          const session = sessionFromPayload(res.data);
+          if (session?.user) return session;
+          // Token present but server returned empty user — drop it.
+          apiClient.clearAccessToken();
+          return null;
+        }
         if (res.status === 404 || res.status === 405) {
-          return this.fetchCookieSession();
+          return this.usesCookieFallback() ? this.fetchCookieSession() : null;
         }
-        if (res.status !== 200) {
-          if (res.status === 0) return this.fetchCookieSession();
-          throw apiClient.parseError(res.data, res.status);
-        }
-        return sessionFromPayload(res.data);
+        return null;
       } catch {
-        return this.fetchCookieSession();
+        return this.usesCookieFallback() ? this.fetchCookieSession() : null;
       }
     }
-    return this.fetchCookieSession();
+    return this.usesCookieFallback() ? this.fetchCookieSession() : null;
   },
 
   async fetchCookieSession(): Promise<AuthSession | null> {
@@ -74,34 +105,76 @@ export const AuthAPI = {
     return sessionFromPayload(res.data);
   },
 
-  async signInTv(email: string, password: string): Promise<AuthSession | null> {
+  async signInTv(
+    email: string,
+    password: string,
+    mfaCode?: string,
+  ): Promise<AuthSession> {
+    const body: Record<string, string> = {
+      email: email.trim().toLowerCase(),
+      password,
+    };
+    if (mfaCode && mfaCode.trim()) body.mfaCode = mfaCode.trim();
+
     const res = await apiClient.request("api/tv/session", {
       method: "POST",
-      jsonBody: {
-        email: email.trim().toLowerCase(),
-        password,
-      },
+      jsonBody: body,
     });
 
     if (res.status === 200) {
-      const data = res.data as TvSessionPayload;
-      const token = data?.token;
-      const session = sessionFromPayload(data?.session ?? data);
-      if (!token || !session?.user) {
-        throw new ApiError("server", "Sign-in succeeded but no session was created.");
+      const data = (res.data ?? {}) as TvSessionPayload;
+      const token = extractToken(data);
+      let session = sessionFromPayload(data.session ?? data);
+
+      if (!token) {
+        throw new ApiError(
+          "server",
+          "Sign-in succeeded but the TV did not return a session token. Please try again.",
+          200,
+        );
       }
+
+      // Store token first so the verification GET carries Authorization.
       apiClient.setAccessToken(token);
+
+      if (!session?.user) {
+        // Some responses only return token — confirm via GET.
+        session = await this.fetchSession();
+      }
+
+      if (!session?.user) {
+        apiClient.clearAccessToken();
+        throw new ApiError(
+          "server",
+          "Sign-in succeeded but no session was created. Please try again.",
+          200,
+        );
+      }
+
+      // Round-trip confirm: GET /api/tv/session with the Bearer must see the user.
+      try {
+        const verify = await apiClient.request("api/tv/session");
+        if (verify.status === 200) {
+          const verified = sessionFromPayload(verify.data);
+          if (verified?.user) return verified;
+        }
+      } catch {
+        /* keep the POST session if verify is flaky */
+      }
+
       return session;
     }
 
-    if (res.status === 401 || res.status === 429) {
+    if (res.status === 401 || res.status === 403 || res.status === 429 || res.status === 400) {
       throw apiClient.parseError(res.data, res.status);
     }
-    if (res.status === 403 && (res.data as TvSessionPayload)?.error) {
-      throw apiClient.parseError(res.data, res.status);
-    }
-    // 404/405 → TV endpoint missing; fall back to cookies.
-    return null;
+
+    throw new ApiError(
+      "server",
+      (res.data as TvSessionPayload)?.error ||
+        `TV sign-in failed (${res.status || "network"}). Please try again.`,
+      res.status,
+    );
   },
 
   async signInCookies(email: string, password: string): Promise<AuthSession> {
@@ -134,7 +207,7 @@ export const AuthAPI = {
 
     const url = String(data.url || "");
     if (/[?&]csrf=true\b/.test(url) || /[?&]error=/.test(url)) {
-      throw new ApiError("server", "Sign-in could not create a session on this TV. Please try again.");
+      throw new ApiError("server", "Sign-in could not create a session. Please try again.");
     }
 
     if (!res.ok && res.status !== 302) {
@@ -152,41 +225,61 @@ export const AuthAPI = {
     return session;
   },
 
-  async signIn(email: string, password: string): Promise<AuthSession> {
-    try {
-      const tvSession = await this.signInTv(email, password);
-      if (tvSession?.user) return tvSession;
-    } catch (err) {
-      // Hard auth failures (bad password / rate limit) must surface.
-      if (err instanceof ApiError && err.status !== 404 && err.status !== 405 && err.status !== 0) {
-        throw err;
-      }
+  async signIn(email: string, password: string, mfaCode?: string): Promise<AuthSession> {
+    // On the packaged IPK / release build: TV Bearer ONLY. Cookie fallback is
+    // what made QA keep failing with "no session was created".
+    if (!this.usesCookieFallback()) {
+      return this.signInTv(email, password, mfaCode);
     }
-    return this.signInCookies(email, password);
+
+    try {
+      return await this.signInTv(email, password, mfaCode);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        // Don't hide real auth failures (bad password / MFA / rate limit).
+        if (
+          err.status === 400 ||
+          err.status === 401 ||
+          err.status === 403 ||
+          err.status === 429 ||
+          err.mfaRequired
+        ) {
+          throw err;
+        }
+        // Only fall back when the TV endpoint is missing in local/dev.
+        if (err.status !== 404 && err.status !== 405) throw err;
+      }
+      return this.signInCookies(email, password);
+    }
   },
 
   async signOut(): Promise<void> {
+    const hadToken = apiClient.hasBearerSession();
     apiClient.clearAccessToken();
-    try {
-      await apiClient.request("api/tv/session", { method: "DELETE" });
-    } catch {
-      /* ignore */
-    }
-    try {
-      const csrfRes = await apiClient.request("api/auth/csrf");
-      const csrf = csrfRes.data as CSRFResponse | null;
-      if (csrf?.csrfToken) {
-        await apiClient.request("api/auth/signout", {
-          method: "POST",
-          formBody: {
-            csrfToken: csrf.csrfToken,
-            callbackUrl: AppConfig.webBaseURL,
-            json: "true",
-          },
-        });
+    if (hadToken) {
+      try {
+        await apiClient.request("api/tv/session", { method: "DELETE" });
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
+    }
+    if (this.usesCookieFallback()) {
+      try {
+        const csrfRes = await apiClient.request("api/auth/csrf");
+        const csrf = csrfRes.data as CSRFResponse | null;
+        if (csrf?.csrfToken) {
+          await apiClient.request("api/auth/signout", {
+            method: "POST",
+            formBody: {
+              csrfToken: csrf.csrfToken,
+              callbackUrl: AppConfig.webBaseURL,
+              json: "true",
+            },
+          });
+        }
+      } catch {
+        /* ignore */
+      }
     }
   },
 };

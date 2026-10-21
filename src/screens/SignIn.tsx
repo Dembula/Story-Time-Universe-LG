@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useAppState } from "@/state/AppState";
+import { ApiError } from "@/api/client";
 import { useFocusable } from "@/tv/useFocusable";
 import { useRemote } from "@/tv/useRemote";
 import { FocusButton } from "@/components/FocusButton";
@@ -10,22 +11,32 @@ import { exitApp } from "@/tv/platform";
 /**
  * Sign-in screen. Fields are focusable; pressing OK on a field opens the TV's
  * on-screen keyboard (native <input> focus triggers the webOS IME).
+ *
+ * Packaged TVs authenticate via POST /api/tv/session (Bearer JWT) — never
+ * browser cookies — so sessions stick for LG QA.
  */
 export function SignIn() {
   const { signIn, isBusy, bootstrapError } = useAppState();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [needsMfa, setNeedsMfa] = useState(false);
   const [error, setError] = useState<string | null>(bootstrapError);
 
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const mfaRef = useRef<HTMLInputElement>(null);
 
   const emailField = useFocusable<HTMLDivElement>({
-    autoFocus: true,
+    autoFocus: !needsMfa,
     onEnter: () => emailRef.current?.focus(),
   });
   const passwordField = useFocusable<HTMLDivElement>({
     onEnter: () => passwordRef.current?.focus(),
+  });
+  const mfaField = useFocusable<HTMLDivElement>({
+    autoFocus: needsMfa,
+    onEnter: () => mfaRef.current?.focus(),
   });
 
   useRemote({ onBack: exitApp });
@@ -34,12 +45,24 @@ export function SignIn() {
     setError(null);
     emailRef.current?.blur();
     passwordRef.current?.blur();
+    mfaRef.current?.blur();
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim(), password, needsMfa ? mfaCode.trim() : undefined);
     } catch (err) {
+      if (err instanceof ApiError && err.mfaRequired) {
+        setNeedsMfa(true);
+        setError(err.message || "Enter the 6-digit authenticator code.");
+        return;
+      }
       setError(err instanceof Error ? err.message : "Sign in failed.");
     }
   };
+
+  const canSubmit =
+    !!email &&
+    !!password &&
+    !isBusy &&
+    (!needsMfa || mfaCode.trim().length >= 6);
 
   return (
     <div className="signin">
@@ -81,13 +104,31 @@ export function SignIn() {
           />
         </div>
 
+        {needsMfa && (
+          <div
+            ref={mfaField.ref}
+            className={`field tv-focusable ${mfaField.focused ? "tv-focused" : ""}`}
+            onClick={() => mfaRef.current?.focus()}
+          >
+            <input
+              ref={mfaRef}
+              type="tel"
+              inputMode="numeric"
+              placeholder="Authenticator code"
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              autoComplete="one-time-code"
+            />
+          </div>
+        )}
+
         {error && <div className="error-text signin-error">{error}</div>}
 
         <FocusButton
           onEnter={submit}
           className="btn signin-submit"
           focusClass="focus-lift"
-          disabled={isBusy || !email || !password}
+          disabled={!canSubmit}
         >
           {isBusy ? "Signing in…" : "Sign In"}
         </FocusButton>

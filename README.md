@@ -109,12 +109,14 @@ player, Left/Right skip 10s.
 - Packaged for **webOS 3.0 → 26** via `@vitejs/plugin-legacy` (`chrome >= 38`),
   emitting a classic SystemJS entry (no `type="module"`) so older Chromium does
   not black-screen on launch (TVAPPQA-61911).
-- Auth on device uses **`/api/tv/session` Bearer JWT** so sessions stick without
-  NextAuth cookies (TVAPPQA-61908). Same approach as the Samsung TV app.
+- Auth on device uses **`/api/tv/session` Bearer JWT only** (no cookie fallback
+  in the packaged IPK) so sessions stick without NextAuth cookies
+  (TVAPPQA-61908). Same approach as the Samsung TV app; production middleware
+  maps Bearer + `X-ST-Viewer-Profile` onto session cookies for playback/watch.
 - Dual input: D-pad and pointer are both supported (`setupRemoteInput` in
   `src/tv/platform.ts`). The current mode is tracked via `cursorStateChange`,
   pointer movement, and key presses; `body.dpad-mode` hides the arrow while
   navigating with the D-pad so it never lingers on screen.
 - App icons are generated from the official black **S.T** brand icon via
   `npm run gen:icons`.
-- App version **1.0.1** in `public/appinfo.json`.
+- App version **1.0.2** in `public/appinfo.json`.

@@ -182,6 +182,7 @@ export interface ApiErrorBody {
   error?: string;
   requiresPin?: boolean;
   paymentRequired?: boolean;
+  mfaRequired?: boolean;
 }
 
 export interface EpisodePlaybackInfo {

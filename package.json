@@ -1,6 +1,6 @@
 {
   "name": "story-time-universe-lg",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Story Time Universe viewer app for LG webOS TV",
   "type": "module",
