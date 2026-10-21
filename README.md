@@ -106,9 +106,10 @@ player, Left/Right skip 10s.
 
 ## Notes
 
-- Packaged for **webOS 3.0 → 26** via `@vitejs/plugin-legacy` (`chrome >= 38`),
-  emitting a classic SystemJS entry (no `type="module"`) so older Chromium does
-  not black-screen on launch (TVAPPQA-61911).
+- Packaged for older webOS with a **classic IIFE bundle** (no `type="module"`,
+  es2015 target) so Chromium on TV does not black-screen on launch
+  (TVAPPQA-61911). `@vitejs/plugin-legacy` was removed — it OOMed Node while
+  babel-transpiling `hls.js`.
 - Auth on device uses **`/api/tv/session` Bearer JWT only** (no cookie fallback
   in the packaged IPK) so sessions stick without NextAuth cookies
   (TVAPPQA-61908). Same approach as the Samsung TV app; production middleware

@@ -1,7 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import legacy from "@vitejs/plugin-legacy";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
 // Some webOS TV runtimes fail to load package-local ESM assets that carry the
@@ -9,55 +8,68 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 function stripCrossorigin(): Plugin {
   return {
     name: "strip-crossorigin",
-    // Run after @vitejs/plugin-legacy injects its <script> tags.
     enforce: "post",
     transformIndexHtml: {
       order: "post",
       handler(html) {
-        return html.replace(/\s+crossorigin(=("|')?[^"'>\s]*("|')?)?/g, "");
+        return html
+          .replace(/\s+crossorigin(=("|')?[^"'>\s]*("|')?)?/g, "")
+          .replace(/\s+type=(["'])module\1/g, "");
       },
     },
   };
 }
 
 /**
- * NextAuth sends `__Host-` / `__Secure-` session cookies. Browsers only store
- * those on HTTPS, and `__Host-` cookies must not carry a Domain attribute.
- * Rewrite proxied Set-Cookie headers so they work on https://localhost.
+ * Emit a classic <script src> (no type=module) at the end of <body> so
+ * packaged webOS can boot and #root exists before React mounts.
+ * Avoids @vitejs/plugin-legacy + babel, which OOMs while transpiling hls.js.
  */
+function classicScriptEntry(): Plugin {
+  return {
+    name: "classic-script-entry",
+    enforce: "post",
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        let out = html.replace(
+          /<script([^>]*?)\s+type=(["'])module\2([^>]*)>/g,
+          "<script$1$3>",
+        );
+        // Pull app scripts out of <head> and append before </body> with defer
+        // so the DOM (#root) is ready when the IIFE runs.
+        const scripts: string[] = [];
+        out = out.replace(/<script\b[^>]*src=["'][^"']+["'][^>]*>\s*<\/script>/gi, (tag) => {
+          scripts.push(tag.replace(/<script\b/i, "<script defer"));
+          return "";
+        });
+        if (scripts.length && /<\/body>/i.test(out)) {
+          out = out.replace(/<\/body>/i, `${scripts.join("\n")}\n</body>`);
+        }
+        return out;
+      },
+    },
+  };
+}
+
 function rewriteAuthCookies(cookies: string[]): string[] {
   return cookies.map((cookie) => {
     let out = cookie;
-    // Drop Domain so the cookie is host-only for localhost (__Host- requires this).
     out = out.replace(/;\s*Domain=[^;]*/gi, "");
-    // Keep Secure (required by __Host- / __Secure-); add it if the backend omitted it.
     if (!/;\s*Secure\b/i.test(out)) out += "; Secure";
-    // SameSite=None is fine over HTTPS; leave as-is. If missing, prefer Lax.
     if (!/;\s*SameSite=/i.test(out)) out += "; SameSite=Lax";
     return out;
   });
 }
 
 // webOS packages load assets from a relative path inside the .ipk, so `base`
-// must be relative. Older Chromium on webOS 3–6 cannot run native ESM from a
-// packaged app — ship a classic (SystemJS/IIFE) legacy bundle only.
-export default defineConfig({
+// must be relative. Ship a classic (non-module) bundle so older TVs boot.
+export default defineConfig(({ command }) => ({
   base: "./",
   plugins: [
     react(),
-    basicSsl(),
-    legacy({
-      // LG web engine matrix: 3.x=Chrome38, 4.x=53, 5.x=68, 6.x=79, 22+=87+.
-      targets: ["chrome >= 38"],
-      // Packaged webOS apps commonly reject type=module local scripts
-      // (TVAPPQA-61911 black screen). Emit only the classic legacy entry.
-      renderModernChunks: false,
-      polyfills: true,
-      additionalLegacyPolyfills: [
-        "regenerator-runtime/runtime",
-        "whatwg-fetch",
-      ],
-    }),
+    ...(command === "serve" ? [basicSsl()] : []),
+    classicScriptEntry(),
     stripCrossorigin(),
   ],
   resolve: {
@@ -66,26 +78,29 @@ export default defineConfig({
     },
   },
   build: {
-    // Downlevel target; @vitejs/plugin-legacy further transpile for Chrome 38+.
+    // es2015 covers webOS 4+ Chromium without the babel OOM from plugin-legacy.
     target: "es2015",
     outDir: "dist",
     assetsDir: "assets",
     chunkSizeWarningLimit: 2000,
     cssTarget: "chrome61",
+    minify: "esbuild",
+    modulePreload: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          hls: ["hls.js"],
-        },
+        // Single classic IIFE entry — no type=module, no System.import.
+        format: "iife",
+        name: "StoryTimeUniverse",
+        inlineDynamicImports: true,
+        entryFileNames: "assets/index.js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
       },
     },
   },
   server: {
     host: true,
     port: 5173,
-    // HTTPS via @vitejs/plugin-basic-ssl so browsers accept __Host- / __Secure-
-    // NextAuth cookies on https://localhost:5173 (desktop preview only).
-    // Same-origin proxy avoids CORS and forwards session cookies in local dev.
     proxy: {
       "/api": {
         target: "https://story-time.online",
@@ -101,4 +116,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));

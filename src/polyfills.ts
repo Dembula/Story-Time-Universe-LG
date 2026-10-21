@@ -1,7 +1,10 @@
 /**
- * Tiny runtime polyfills for webOS 3.x Chromium (~38) that core-js / legacy
- * may not cover on the critical boot path.
+ * Tiny runtime polyfills for older webOS Chromium on the critical boot path.
+ * Kept light (no @vitejs/plugin-legacy) so packaging doesn't OOM Node.
  */
+import "whatwg-fetch";
+import "regenerator-runtime/runtime";
+
 
 /* Element.closest — Chrome 41+ */
 if (typeof Element !== "undefined" && !Element.prototype.closest) {
