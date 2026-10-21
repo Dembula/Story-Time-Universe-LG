@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
 import { ViewerAPI } from "@/api/viewerApi";
 import { apiClient } from "@/api/client";
-import { resolveStreamUrl } from "@/api/mediaUrl";
+import { withTvAuthOnStreamUrl } from "@/api/mediaUrl";
 import type { EpisodePlaybackInfo } from "@/api/types";
 import type { PlaybackRequest } from "@/state/Navigation";
 import { useRemote } from "@/tv/useRemote";
@@ -96,7 +96,9 @@ export function Player({ request, onClose }: PlayerProps) {
           episodeId,
           trailer: isTrailer,
         });
-        const src = resolveStreamUrl(bundle.playback?.src);
+        const token = apiClient.getAccessToken();
+        const profileId = apiClient.getViewerProfileId();
+        const src = withTvAuthOnStreamUrl(bundle.playback?.src, { token, profileId });
         if (!src) throw new Error("No playable stream was returned for this title.");
 
         const isHls =
@@ -121,15 +123,20 @@ export function Player({ request, onClose }: PlayerProps) {
         if (isHls && !video.canPlayType("application/vnd.apple.mpegurl")) {
           const HlsMod = (await import("hls.js")).default;
           if (HlsMod.isSupported()) {
-            const useCredentials = !apiClient.getAccessToken();
+            const useCredentials = !token;
             const hls = new HlsMod({
               // Workers are unreliable on older webOS Chromium.
               enableWorker: false,
               lowLatencyMode: false,
-              xhrSetup: (xhr) => {
+              xhrSetup: (xhr, requestUrl) => {
                 // Cookie sessions need credentials; Bearer/JWT must omit them
                 // or HLS CDN CORS rejects the request.
                 xhr.withCredentials = useCredentials;
+                // Same-origin API playlist hops still need the JWT (query may be stripped).
+                if (token && /\/api\//i.test(requestUrl)) {
+                  xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+                  if (profileId) xhr.setRequestHeader("X-ST-Viewer-Profile", profileId);
+                }
               },
             });
             hlsRef.current = hls;
@@ -143,7 +150,7 @@ export function Player({ request, onClose }: PlayerProps) {
           }
         }
 
-        // Native HLS (webOS/Safari) or progressive MP4.
+        // Native HLS (webOS/Safari) or progressive MP4 — auth via tv_token query.
         video.src = src;
         const onMeta = () => {
           video.removeEventListener("loadedmetadata", onMeta);

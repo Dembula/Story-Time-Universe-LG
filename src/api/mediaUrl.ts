@@ -159,3 +159,36 @@ export function resolveStreamUrl(src?: string | null): string | null {
   if (t.startsWith("http")) return t;
   return `${AppConfig.apiBaseURL}${t.startsWith("/") ? "" : "/"}${t}`;
 }
+
+/**
+ * <video> / native HLS cannot send Authorization. Append tv_token (+ profile)
+ * for same-origin API HLS proxies so production middleware can authenticate.
+ */
+export function withTvAuthOnStreamUrl(
+  src: string | null | undefined,
+  opts?: { token?: string | null; profileId?: string | null },
+): string | null {
+  const resolved = resolveStreamUrl(src);
+  if (!resolved) return null;
+  const token = (opts?.token || "").trim();
+  if (!token) return resolved;
+
+  const apiBase = AppConfig.apiBaseURL || "https://story-time.online";
+  const isApi =
+    resolved.startsWith(apiBase) ||
+    resolved.startsWith("/api/") ||
+    /\/api\/content\//i.test(resolved);
+  if (!isApi) return resolved;
+
+  try {
+    const url = new URL(resolved, apiBase || "https://story-time.online");
+    if (!url.searchParams.has("tv_token")) url.searchParams.set("tv_token", token);
+    const profile = (opts?.profileId || "").trim();
+    if (profile && !url.searchParams.has("tv_profile")) {
+      url.searchParams.set("tv_profile", profile);
+    }
+    return url.toString();
+  } catch {
+    return resolved;
+  }
+}

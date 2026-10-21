@@ -119,4 +119,4 @@ player, Left/Right skip 10s.
   navigating with the D-pad so it never lingers on screen.
 - App icons are generated from the official black **S.T** brand icon via
   `npm run gen:icons`.
-- App version **1.0.2** in `public/appinfo.json`.
+- App version **1.0.3** in `public/appinfo.json` — requires production middleware covering `/api/watchlist`, `/api/crew`, `/api/people`, CORS `X-Viewer-Profile-Id`, and `tv_token` for HLS.
